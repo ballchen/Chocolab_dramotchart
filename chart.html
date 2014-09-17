@@ -1,0 +1,165 @@
+<html>
+	<head>
+	<meta charset="utf-8">
+		<script src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script src="bower_components/highcharts/highcharts.js"></script>
+		<script src="bower_components/underscore/underscore.js"></script>
+		<script src="bower_components/moment/moment.js"></script>	
+	</head>
+	<body>
+		<input type="file" id="data">
+		<div id="container" style="width:100%; height:400px;"></div>
+
+		<script>
+			var classify = new Object();
+			classify[1] = [];
+			classify[2] = [];
+			classify[3] = [];
+			classify[4] = [];
+			classify[5] = [];
+			var system_error=[], no_fluent=[], no_sound=[], advise=[], error=[]; 
+			$('#data').on('change',function(e){
+				var file = $('#data')[0].files[0];
+				var reader = new FileReader();
+				reader.onload = function(e){
+
+					console.log(csvJSON(reader.result));
+					var jsondata = csvJSON(reader.result)
+					console.log(jsondata);
+					jsondata = _.sortBy(jsondata, function(sort){return sort.date})
+					_.each(jsondata,function(obj){
+						if(obj.report_category === '影片連結失效/錯誤(system)'){
+							classify[1].push(obj);
+						}
+						else if(obj.report_category === '影片畫質不佳/播放不順'){
+							classify[2].push(obj);
+						}
+						else if(obj.report_category === '影片沒有聲音'){
+							classify[3].push(obj);
+						}
+						else if(obj.report_category === '功能建議'){
+							classify[4].push(obj);
+						}
+						else if(obj.report_category === '影片連結失效/錯誤'){
+							classify[5].push(obj);
+						}
+
+					})
+					// console.log(system_error);
+					console.log(classify[2]);
+					
+					// console.log(no_sound);
+					// console.log(advise);
+					// console.log(error);
+					// console.log(_.pluck(system_error,'date'));
+					// console.log(_.pluck(system_error,'count').map(Number));
+					fillEmpty(classify[1]);
+					fillEmptyOther(classify[2], classify[1]);
+					fillEmptyOther(classify[3], classify[1]);
+					fillEmptyOther(classify[4], classify[1]);
+					fillEmptyOther(classify[5], classify[1]);
+					$(function () { 
+					    $('#container').highcharts({
+					        chart: {
+					            type: 'column'
+					        },
+					        title: {
+					            text: 'System Error'
+					        },
+					        xAxis: {
+					            categories: _.pluck(classify[1],'date').map(function(date){
+					            		return moment(date).format('MM-DD')
+					            	})
+					        },
+					        yAxis: [{
+					        	min: 0,
+					            title: {
+					                text: '錯誤次數'
+					            }
+					        },{
+					        	min: 0,
+					        	title: {
+					                text: '錯誤次數',
+					            },
+					            opposite: true
+					        }
+					        ],
+					        series: [{
+					        	yAxis: 0,
+					        	type: 'column',
+					            name: '影片連結失效/system',
+					            data: _.pluck(classify[1],'count').map(Number)
+					        },{
+					        	yAxis: 1,
+					        	type: 'line',
+					            name: '影片播放不順',
+					            data: _.pluck(classify[2],'count').map(Number)
+					        },{
+					        	yAxis: 1,
+					        	type: 'line',
+					            name: '影片沒有聲音',
+					            data: _.pluck(classify[3],'count').map(Number)
+					        },{
+					        	yAxis: 1,
+					        	type: 'line',
+					            name: '功能建議',
+					            data: _.pluck(classify[4],'count').map(Number)
+					        },{
+					        	yAxis: 1,
+					        	type: 'column',
+					            name: '影片連結失效/錯誤',
+					            data: _.pluck(classify[5],'count').map(Number)
+					        }
+					        ]
+					    });
+					});
+					
+				}
+				reader.readAsText(file);	
+			})
+
+
+/*-------------------turn CSV into json-----------------------*/
+	function csvJSON(csv){
+	  var lines=csv.split("\n");
+	  var result = [];
+	  var headers=lines[0].split(",");
+	  console.log(headers[2]);
+	  for(var i=1;i<lines.length -1 ;i++){
+		  var obj = new Object();
+		  var currentline=lines[i].split(",");
+		  for(var j=0;j<headers.length;j++){
+			  obj[headers[j]] = currentline[j];
+		  }
+		  result.push(obj);
+	  }
+	  return result  //in json format (have \r)
+	}
+/*-------------------turn CSV into json-----------------------*/
+
+	function fillEmpty(origin){
+		for(var i = 1; i < origin.length; i++){
+			if(origin[i].date != moment(origin[i-1].date).add(1,'days').format("YYYY-MM-DD")){
+				origin.splice(i,0,{date:moment(origin[i-1].date).add(1,'days').format("YYYY-MM-DD")})
+				console.log(moment(origin[i-1].date).add(1,'days').format("YYYY-MM-DD"));
+			}
+		}	
+	}
+
+	function fillEmptyOther(origin, sample){
+		for(var i = 0; i < sample.length; i++){
+			if(!_.find(origin,function(org){return org.date === sample[i].date})){
+				origin.splice(i,0,{
+					date: sample[i].date,
+					count: 0
+				})
+				console.log(sample[i].date)
+			}
+		}	
+	}
+			
+
+			
+		</script>
+	</body>
+</html>
