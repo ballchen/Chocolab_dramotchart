@@ -1,14 +1,17 @@
-<html>
+<html ng-app="chartApp">
 	<head>
 	<meta charset="utf-8">
+		<script src="bower_components/angular-file-upload/angular-file-upload.js"></script>	
+		<script src="bower_components/angularjs/angular.js"></script>
 		<script src="bower_components/jquery/dist/jquery.min.js"></script>
 		<script src="bower_components/highcharts/highcharts.js"></script>
 		<script src="bower_components/underscore/underscore.js"></script>
 		<script src="bower_components/moment/moment.js"></script>
 		<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+		<script src='app.js'></script>	
 		<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">		
 	</head>
-	<body>
+	<body ng-controller="chartCtrl">
 		<input type="file" id="data">
 		<div id="container" style="width:100%; height:400px;"></div>
 
@@ -19,7 +22,7 @@
 			classify[3] = [];
 			classify[4] = [];
 			classify[5] = [];
-			var system_error=[], no_fluent=[], no_sound=[], advise=[], error=[]; 
+
 			$('#data').on('change',function(e){
 				var file = $('#data')[0].files[0];
 				var reader = new FileReader();
