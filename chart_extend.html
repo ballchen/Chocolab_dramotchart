@@ -1,145 +1,77 @@
 <html ng-app="chartApp">
 	<head>
 	<meta charset="utf-8">
-		<script src="bower_components/angular-file-upload/angular-file-upload.js"></script>	
+		<script src="bower_components/ng-file-upload/angular-file-upload-shim.js"></script>
 		<script src="bower_components/angularjs/angular.js"></script>
+		<script src="bower_components/ng-file-upload/angular-file-upload.js"></script>	
 		<script src="bower_components/jquery/dist/jquery.min.js"></script>
 		<script src="bower_components/highcharts/highcharts.js"></script>
 		<script src="bower_components/underscore/underscore.js"></script>
 		<script src="bower_components/moment/moment.js"></script>
 		<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 		<script src='app.js'></script>	
-		<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">		
+		<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">
+
 	</head>
 	<body ng-controller="chartCtrl">
-		<input type="file" id="data">
+		<input type="file" id="data" ng-file-select="onFileSelect($files)">
+		
+		<!-- <table>
+			<tr ng-repeat="data in csvdata">
+				<td>{{data}}</td>
+			</tr>
+		</table> -->
+		<button ng-click="deleteHeader()">這資料本來就沒有欄位</button>
+		<button ng-click="headerconsole()"></button>
+		
+		<div ng-repeat='header in dataHeaders'>
+			<input type="text" ng-model="header" >
+			<button ng-click="changeHeader(header,$index)">更改</button>
+			<button ng-click="addColumn(header, $index)">加入</button>
+			
+		</div>
+		<div>
+			<button ng-click="cvnJSONStart()">確認Header，開始轉換資料</button>
+		</div>
+		<ul>
+			目前的header:
+			<li ng-repeat="header in dataHeaders">
+				{{header}}
+				<button ng-click="classfyData($index)">以這個作分類</button>
+				<button ng-click="addxAxis(header)">加入x軸(ONLY ONE)</button>
+			</li>
+		</ul>
+
+		<input ng-init="newyaxis.min = 0" ng-model="newyaxis.min" type="number">
+		<input ng-model="newyaxis.title.text" type="text">
+		<input ng-model="newyaxis.opposite" type="checkbox">opposite</input>
+		<button ng-click="addyAxis()">增加y軸</button>
+
+		<ul>
+			目前的y軸：
+		</ul>
+
+
+		<div>
+			<ul>
+				series分類完有{{classfiedData.keys.length}}個類別：
+				<li ng-repeat = "data in classfiedData.keys">
+					{{data}}
+					<button ng-click="addSeries(data, $index)">加入series</button>
+				</li>
+			</ul>
+		</div>
+
+		<button ng-click="generateChart()">產生圖表</button>
+		
 		<div id="container" style="width:100%; height:400px;"></div>
 
 		<script>
-			var classify = new Object();
-			classify[1] = [];
-			classify[2] = [];
-			classify[3] = [];
-			classify[4] = [];
-			classify[5] = [];
-
-			$('#data').on('change',function(e){
-				var file = $('#data')[0].files[0];
-				var reader = new FileReader();
-				reader.onload = function(e){
-
-					console.log(csvJSON(reader.result));
-					var jsondata = csvJSON(reader.result)
-					console.log(jsondata);
-					jsondata = _.sortBy(jsondata, function(sort){return sort.date})
-					_.each(jsondata,function(obj){
-						if(obj.report_category === '影片連結失效/錯誤(system)'){
-							classify[1].push(obj);
-						}
-						else if(obj.report_category === '影片畫質不佳/播放不順'){
-							classify[2].push(obj);
-						}
-						else if(obj.report_category === '影片沒有聲音'){
-							classify[3].push(obj);
-						}
-						else if(obj.report_category === '功能建議'){
-							classify[4].push(obj);
-						}
-						else if(obj.report_category === '影片連結失效/錯誤'){
-							classify[5].push(obj);
-						}
-
-					})
-					// console.log(system_error);
-					console.log(classify[2]);
-					
-					// console.log(no_sound);
-					// console.log(advise);
-					// console.log(error);
-					// console.log(_.pluck(system_error,'date'));
-					// console.log(_.pluck(system_error,'count').map(Number));
-					fillEmpty(classify[1]);
-					fillEmptyOther(classify[2], classify[1]);
-					fillEmptyOther(classify[3], classify[1]);
-					fillEmptyOther(classify[4], classify[1]);
-					fillEmptyOther(classify[5], classify[1]);
-					$(function () { 
-					    $('#container').highcharts({
-					        chart: {
-					            type: 'column'
-					        },
-					        title: {
-					            text: 'System Error'
-					        },
-					        xAxis: {
-					            categories: _.pluck(classify[1],'date').map(function(date){
-					            		return moment(date).format('MM-DD')
-					            	})
-					        },
-					        yAxis: [{
-					        	min: 0,
-					            title: {
-					                text: '錯誤次數'
-					            }
-					        },{
-					        	min: 0,
-					        	title: {
-					                text: '錯誤次數',
-					            },
-					            opposite: true
-					        }
-					        ],
-					        series: [{
-					        	yAxis: 0,
-					        	type: 'column',
-					            name: '影片連結失效/system',
-					            data: _.pluck(classify[1],'count').map(Number)
-					        },{
-					        	yAxis: 1,
-					        	type: 'column',
-					            name: '影片連結失效/錯誤',
-					            data: _.pluck(classify[5],'count').map(Number)
-					        },{
-					        	yAxis: 1,
-					        	type: 'line',
-					            name: '影片播放不順',
-					            data: _.pluck(classify[2],'count').map(Number)
-					        },{
-					        	yAxis: 1,
-					        	type: 'line',
-					            name: '影片沒有聲音',
-					            data: _.pluck(classify[3],'count').map(Number)
-					        },{
-					        	yAxis: 1,
-					        	type: 'line',
-					            name: '功能建議',
-					            data: _.pluck(classify[4],'count').map(Number)
-					        }
-					        ]
-					    });
-					});
-					
-				}
-				reader.readAsText(file);	
-			})
+			
 
 
 /*-------------------turn CSV into json-----------------------*/
-	function csvJSON(csv){
-	  var lines=csv.split("\n");
-	  var result = [];
-	  var headers=lines[0].split(",");
-	  console.log(headers[2]);
-	  for(var i=1;i<lines.length -1 ;i++){
-		  var obj = new Object();
-		  var currentline=lines[i].split(",");
-		  for(var j=0;j<headers.length;j++){
-			  obj[headers[j]] = currentline[j];
-		  }
-		  result.push(obj);
-	  }
-	  return result  //in json format (have \r)
-	}
+	
 /*-------------------turn CSV into json-----------------------*/
 
 	function fillEmpty(origin){
