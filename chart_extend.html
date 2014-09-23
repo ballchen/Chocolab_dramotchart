@@ -1,0 +1,102 @@
+<html ng-app="chartApp">
+	<head>
+	<meta charset="utf-8">
+		<script src="bower_components/ng-file-upload/angular-file-upload-shim.js"></script>
+		<script src="bower_components/angularjs/angular.js"></script>
+		<script src="bower_components/ng-file-upload/angular-file-upload.js"></script>	
+		<script src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script src="bower_components/highcharts/highcharts.js"></script>
+		<script src="bower_components/underscore/underscore.js"></script>
+		<script src="bower_components/moment/moment.js"></script>
+		<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+		<script src='app.js'></script>	
+		<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">
+
+	</head>
+	<body ng-controller="chartCtrl">
+		<input type="file" id="data" ng-file-select="onFileSelect($files)">
+		
+		<!-- <table>
+			<tr ng-repeat="data in csvdata">
+				<td>{{data}}</td>
+			</tr>
+		</table> -->
+		<button ng-click="deleteHeader()">這資料本來就沒有欄位</button>
+		<button ng-click="headerconsole()"></button>
+		
+		<div ng-repeat='header in dataHeaders'>
+			<input type="text" ng-model="header" >
+			<button ng-click="changeHeader(header,$index)">更改</button>
+			<button ng-click="addColumn(header, $index)">加入</button>
+			
+		</div>
+		<div>
+			<button ng-click="cvnJSONStart()">確認Header，開始轉換資料</button>
+		</div>
+		<ul>
+			目前的header:
+			<li ng-repeat="header in dataHeaders">
+				{{header}}
+				<button ng-click="classfyData($index)">以這個作分類</button>
+				<button ng-click="addxAxis(header)">加入x軸(ONLY ONE)</button>
+			</li>
+		</ul>
+
+		<input ng-init="newyaxis.min = 0" ng-model="newyaxis.min" type="number">
+		<input ng-model="newyaxis.title.text" type="text">
+		<input ng-model="newyaxis.opposite" type="checkbox">opposite</input>
+		<button ng-click="addyAxis()">增加y軸</button>
+
+		<ul>
+			目前的y軸：
+		</ul>
+
+
+		<div>
+			<ul>
+				series分類完有{{classfiedData.keys.length}}個類別：
+				<li ng-repeat = "data in classfiedData.keys">
+					{{data}}
+					<button ng-click="addSeries(data, $index)">加入series</button>
+				</li>
+			</ul>
+		</div>
+
+		<button ng-click="generateChart()">產生圖表</button>
+		
+		<div id="container" style="width:100%; height:400px;"></div>
+
+		<script>
+			
+
+
+/*-------------------turn CSV into json-----------------------*/
+	
+/*-------------------turn CSV into json-----------------------*/
+
+	function fillEmpty(origin){
+		for(var i = 1; i < origin.length; i++){
+			if(origin[i].date != moment(origin[i-1].date).add(1,'days').format("YYYY-MM-DD")){
+				origin.splice(i,0,{date:moment(origin[i-1].date).add(1,'days').format("YYYY-MM-DD")})
+				console.log(moment(origin[i-1].date).add(1,'days').format("YYYY-MM-DD"));
+			}
+		}	
+	}
+
+	function fillEmptyOther(origin, sample){
+		for(var i = 0; i < sample.length; i++){
+			if(!_.find(origin,function(org){return org.date === sample[i].date})){
+				origin.splice(i,0,{
+					date: sample[i].date,
+					count: 0
+				})
+				console.log(sample[i].date)
+			}
+		}	
+	}
+			
+
+			
+		</script>
+	</body>
+</html>

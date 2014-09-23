@@ -4,7 +4,9 @@
 		<script src="bower_components/jquery/dist/jquery.min.js"></script>
 		<script src="bower_components/highcharts/highcharts.js"></script>
 		<script src="bower_components/underscore/underscore.js"></script>
-		<script src="bower_components/moment/moment.js"></script>	
+		<script src="bower_components/moment/moment.js"></script>
+		<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+		<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">		
 	</head>
 	<body>
 		<input type="file" id="data">
@@ -91,6 +93,11 @@
 					            data: _.pluck(classify[1],'count').map(Number)
 					        },{
 					        	yAxis: 1,
+					        	type: 'column',
+					            name: '影片連結失效/錯誤',
+					            data: _.pluck(classify[5],'count').map(Number)
+					        },{
+					        	yAxis: 1,
 					        	type: 'line',
 					            name: '影片播放不順',
 					            data: _.pluck(classify[2],'count').map(Number)
@@ -104,11 +111,6 @@
 					        	type: 'line',
 					            name: '功能建議',
 					            data: _.pluck(classify[4],'count').map(Number)
-					        },{
-					        	yAxis: 1,
-					        	type: 'column',
-					            name: '影片連結失效/錯誤',
-					            data: _.pluck(classify[5],'count').map(Number)
 					        }
 					        ]
 					    });
