@@ -13,7 +13,7 @@
 		<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">
 
 	</head>
-	<body ng-controller="chartCtrl">
+	<body ng-controller="chartCtrl" ng-init="initial()">
 		<input type="file" id="data" ng-file-select="onFileSelect($files)">
 		
 		<!-- <table>
@@ -21,6 +21,7 @@
 				<td>{{data}}</td>
 			</tr>
 		</table> -->
+		<!-- Step One : Fetch Data/ Confirm header -->
 		<button ng-click="deleteHeader()">這資料本來就沒有欄位</button>
 		<button ng-click="headerconsole()"></button>
 		
@@ -33,37 +34,77 @@
 		<div>
 			<button ng-click="cvnJSONStart()">確認Header，開始轉換資料</button>
 		</div>
-		<ul>
-			目前的header:
-			<li ng-repeat="header in dataHeaders">
-				{{header}}
-				<button ng-click="classfyData($index)">以這個作分類</button>
-				<button ng-click="addxAxis(header)">加入x軸(ONLY ONE)</button>
-			</li>
-		</ul>
 
-		<input ng-init="newyaxis.min = 0" ng-model="newyaxis.min" type="number">
-		<input ng-model="newyaxis.title.text" type="text">
-		<input ng-model="newyaxis.opposite" type="checkbox">opposite</input>
-		<button ng-click="addyAxis()">增加y軸</button>
+		<!-- Step Two : Add a Chart/ Setting -->
+		<button ng-click="addCharts()">新增一張表</button>
 
-		<ul>
-			目前的y軸：
-		</ul>
+		<div ng-repeat = "chart in charts">
+			<div>
+				第{{$index+1}}張表
+				<input type="text" placeholder='名稱' ng-model="chart.title">
+				<select ng-init="chart.type='column'" ng-model="chart.type">
+					<option value="column">直方圖</option>
+					<option value="line">折線圖</option>
+				</select>
+			</div>
+			<div>
+				
+				<ul>
+					目前的header:
+					<li ng-repeat="header in chart.headers">
+						{{header}}
+						<button ng-click="classifyData(chart,header)">以這個作分類</button>
+						<button ng-click="addxAxis(chart,header)">加入x軸(ONLY ONE)</button>
+					</li>
+				</ul>
+			</div>
+			<div>
+				<div>
+					目前x軸
+					{{chart.xAxis}}
+				</div>
+				<div>
+					目前y軸
+					{{chart.yAxis}}
+				</div>
+				<div>
+					目前Series
+					{{chart.series}}
+				</div>
+			</div>
+			<div>
+				min：<input ng-init="newyaxis.min = 0" ng-model="newyaxis.min" type="number">
+				title:<input ng-model="newyaxis.title.text" type="text">
+				
+				<button ng-click="addyAxis(chart, false)">增加y軸</button>
+				<button ng-if="chart.yAxis[0]" ng-click="deleteyAxis(chart.yAxis, false)">刪除</button>
+			</div>
+			<div>
+				min：<input ng-init="newyaxis_op.min = 0" ng-model="newyaxis_op.min" type="number">
+				title:<input ng-model="newyaxis_op.title.text" type="text">
+				
+				<button ng-click="addyAxis(chart, true)">增加opposite的y軸</button>
+				<button ng-if="chart.yAxis[1]" ng-click="deleteyAxis(chart.yAxis, true)">刪除</button>
+			</div>
+			<div>
+				<ul>
+					series分類完有{{chart.classify.keys.length}}個類別：
+					<li ng-repeat = "(key, data) in chart.classify.keys">	{{key}}
+						{{data}}
+						
+						<select ng-model='chart.yAxisChoice[key]'>
+							<option value="{{y.num}}" ng-repeat="y in chart.yAxis">{{y.title.text}}</option>
+						</select>
+						<button ng-click="consoleY(chart.yAxis)">hey</button>
+						<button ng-click="addSeries(chart,data, $index, chart.yAxisChoice[key])">加入series</button>
+					</li>
+				</ul>
+			</div>
+			
 
-
-		<div>
-			<ul>
-				series分類完有{{classfiedData.keys.length}}個類別：
-				<li ng-repeat = "data in classfiedData.keys">
-					{{data}}
-					<button ng-click="addSeries(data, $index)">加入series</button>
-				</li>
-			</ul>
+			<button ng-click="generateChart(chart)">產生圖表</button>
 		</div>
-
-		<button ng-click="generateChart()">產生圖表</button>
-		
+				
 		<div id="container" style="width:100%; height:400px;"></div>
 
 		<script>

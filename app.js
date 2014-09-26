@@ -1,96 +1,117 @@
 angular.module('chartApp', ['angularFileUpload'])
 
 .controller('chartCtrl', ['$scope','$upload',function($scope,$upload){
-	
-	$scope.dataHeaders = [];
-	$scope
+	$scope.initial = function(){
+		$scope.dataHeaders = [];
+		$scope.xAxis = new Object();
+		$scope.yAxis = [];
+		$scope.series = []; 
+		$scope.charts = []; 
+		$scope.yAxisChoice =new Object();
+		$scope.newyaxis = new Object(); 
+		$scope.newyaxis_op = new Object(); 
+	}
 	$scope.onFileSelect = function($files){
 		var reader = new FileReader();
-		reader.onload = function(e){
-			
+		reader.onload = function(e){			
 			$scope.dataHeaders = getHeader(reader.result);
-
 			$scope.rawdata = reader.result;
-
-
-			// $scope.csvdata = csvJSON(reader.result);
-			// if($scope.csvdata[0].date){
-			// 	$scope.csvdata.sort(function(a,b){
-			// 	  return new Date(b.date) - new Date(a.date);
-			// 	});
-			// }
 			$scope.$apply();
 		}
 		reader.readAsText($files[0]);
 	}
 
 /*設定表 START 格資料*/
+	$scope.addCharts = function(){
+		var newchart = new Object();
+		newchart.headers = $scope.dataHeaders;
+		$scope.charts.push(newchart);
+		console.log($scope.charts)
+	}
 
-	$scope.classfyData = function(index){
+	$scope.classifyData = function(chart,header){
+		console.log(header);
 		var data = new Object();
-		var temp = _.groupBy($scope.csvdata,$scope.dataHeaders[index]);
+		var temp = _.groupBy($scope.csvdata,header);
 		data.keys = _.keys(temp);
 		data.values = _.values(temp);
 		console.log(data);
-		$scope.classfiedData = data;
+		chart.classify = data;
 	}
-	$scope.xAxis = new Object();
-	$scope.addxAxis = function(header){
-		$scope.xAxis.categories = _.pluck($scope.csvdata, header)
-		console.log($scope.xAxis)
+	
+	$scope.addxAxis = function(chart, header){
+		var newxaxis = new Object();
+		newxaxis.categories = _.pluck($scope.csvdata, header)
+		chart.xAxis = newxaxis;
 	}
 
-	$scope.yAxis = [];
-	$scope.addyAxis = function(header){
+	
+	$scope.addyAxis = function(chart, opposite){
+		if(!chart.yAxis) chart.yAxis = [];
+		var find = _.find(chart.yAxis, function(axis){return axis.opposite === opposite});
+		if(!find){
+			if(!opposite)
+				chart.yAxis.push(_.extend(_.pick($scope.newyaxis, 'min','title'),{opposite:opposite}));
+			else
+				chart.yAxis.push(_.extend(_.pick($scope.newyaxis_op, 'min','title'),{opposite:opposite}));
+		}
+
+		_.each(chart.yAxis, function(axis, i){
+			axis.num = i;
+		})
 		
-		$scope.yAxis.push($scope.newyaxis)
-		$scope.newyaxis = new Object();
-		console.log($scope.yAxis);
+		
+		
+	}
+
+	$scope.deleteyAxis = function(yAxis, tf){
+		_.each(yAxis, function(axis, i){
+			if(tf === axis.opposite) yAxis.splice(i, 1);
+		})
+		
 
 	}
-	// {
- //    	min: 0,
- //        title: {
- //            text: '錯誤次數'
- //        }
- //    }
  	
- 	$scope.series = [];   
- 	$scope.addSeries = function(data, index){
+ 	$scope.consoleY = function(y){
+ 		console.log(y);
+ 	}
+
+ 	$scope.addSeries = function(chart, data, index, yAxis){
+ 		console.log(yAxis);
+
+ 		
+ 		if(!chart.series) chart.series = [];
  		var newseries = new Object();
- 		newseries.yAxis= 0;
+ 		newseries.yAxis= parseInt(yAxis);
  		newseries.type = 'column';
  		newseries.name = data;
- 		newseries.data = _.pluck($scope.classfiedData.values[index],'count').map(Number);
+ 		newseries.data = _.pluck(chart.classify.values[index],'count').map(Number);
 
- 		$scope.series.push(newseries);
- 		console.log($scope.series);
+ 		chart.series.push(newseries);
 
  	}
- 	// {
-  //   	yAxis: 0,
-  //   	type: 'column',
-  //       name: '影片連結失效/system',
-  //       data: _.pluck(classify[1],'count').map(Number)
-  //   }
-  //   
-  	$scope.generateChart = function(){
-  			console.log($scope.xAxis)
-  			console.log($scope.yAxis)
-  			console.log($scope.series)
+
+  	$scope.generateChart = function(chart){
   		
-		    $('#container').highcharts({
-		        chart: {
-		            type: 'column'
-		        },
-		        title: {
-		            text: 'System Error'
-		        },
-		        xAxis: $scope.xAxis,
-		        yAxis: $scope.yAxis,
-		        series: $scope.series
-		        
-		    });
+  		
+  		for(var i = 0; i < chart.yAxis.length; i++){
+  			delete chart.yAxis[i].num;
+  			console.log(chart.yAxis);
+  		}
+  		console.log(JSON.stringify(chart));
+		
+	    $('#container').highcharts({
+	        chart: {
+	            type: chart.type
+	        },
+	        title: {
+	            text: chart.title
+	        },
+	        xAxis: chart.xAxis,
+	        yAxis: chart.yAxis,
+	        series: chart.series
+	        
+	    });
 	
   	}
 
@@ -122,7 +143,7 @@ angular.module('chartApp', ['angularFileUpload'])
 		$scope.csvdata = csvJSON($scope.rawdata);
 		if($scope.csvdata[0].date){
 			$scope.csvdata.sort(function(a,b){
-			  return new Date(b.date) - new Date(a.date);
+			  return -(new Date(b.date) - new Date(a.date));
 			});
 		}
 		console.log($scope.csvdata)
