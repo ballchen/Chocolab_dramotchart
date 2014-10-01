@@ -1,4 +1,4 @@
-angular.module('chartApp', ['angularFileUpload'])
+angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 
 .controller('chartCtrl', ['$scope','$upload',function($scope,$upload){
 	$scope.initial = function(){
@@ -9,13 +9,15 @@ angular.module('chartApp', ['angularFileUpload'])
 		$scope.charts = []; 
 		$scope.yAxisChoice =new Object();
 		$scope.newyaxis = new Object(); 
-		$scope.newyaxis_op = new Object(); 
+		$scope.newyaxis_op = new Object();
+		$scope.steps = [true, false, false, false]
 	}
 	$scope.onFileSelect = function($files){
 		var reader = new FileReader();
 		reader.onload = function(e){			
 			$scope.dataHeaders = getHeader(reader.result);
 			$scope.rawdata = reader.result;
+			$scope.fileStyle = {top:"34%"};
 			$scope.$apply();
 		}
 		reader.readAsText($files[0]);
@@ -50,15 +52,38 @@ angular.module('chartApp', ['angularFileUpload'])
 		if(!chart.yAxis) chart.yAxis = [];
 		var find = _.find(chart.yAxis, function(axis){return axis.opposite === opposite});
 		if(!find){
-			if(!opposite)
-				chart.yAxis.push(_.extend(_.pick($scope.newyaxis, 'min','title'),{opposite:opposite}));
-			else
-				chart.yAxis.push(_.extend(_.pick($scope.newyaxis_op, 'min','title'),{opposite:opposite}));
+			if(!opposite){
+				var tempyaxis = new Object();
+				tempyaxis = {
+					title: {
+						text: $scope.newyaxis.title.text
+					},
+					min: $scope.newyaxis.min,
+					opposite: opposite
+				}
+				chart.yAxis.push(tempyaxis);
+			}
+				
+			else{
+				var tempyaxis = new Object();
+				tempyaxis = {
+					title: {
+						text: $scope.newyaxis_op.title.text
+					},
+					min: $scope.newyaxis_op.min,
+					opposite: opposite
+				}
+				chart.yAxis.push(tempyaxis);
+			}
 		}
 
 		_.each(chart.yAxis, function(axis, i){
 			axis.num = i;
 		})
+		$scope.newyaxis = new Object();
+		$scope.newyaxis.min = 0;
+		$scope.newyaxis_op = new Object();
+		$scope.newyaxis_op.min = 0;
 		
 		
 		
@@ -129,6 +154,7 @@ angular.module('chartApp', ['angularFileUpload'])
 
 	$scope.changeHeader = function(header, index){
 		$scope.dataHeaders[index] = header;
+		$scope.$apply()
 	}
 
 
@@ -147,6 +173,7 @@ angular.module('chartApp', ['angularFileUpload'])
 			});
 		}
 		console.log($scope.csvdata)
+		$scope.changeStep(1);
 	}
 
 	function csvJSON(csv){
@@ -163,6 +190,14 @@ angular.module('chartApp', ['angularFileUpload'])
 		  result.push(obj);
 	  }
 	  return result  //in json format (have \r)
+	}
+
+	$scope.changeStep = function(index){
+		_.each($scope.steps, function(step, idx){
+			$scope.steps[idx] = false;
+		})
+		$scope.steps[index] = true;
+		console.log($scope.steps)
 	}
 
 }])

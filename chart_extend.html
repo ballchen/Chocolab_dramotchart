@@ -9,52 +9,154 @@
 		<script src="bower_components/underscore/underscore.js"></script>
 		<script src="bower_components/moment/moment.js"></script>
 		<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+		<script src="bower_components/ngAnimate/js/angular-animate.min.js"></script>
 		<script src='app.js'></script>	
 		<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">
+		<link rel="stylesheet" href="bower_components/ngAnimate/css/ng-animation.css">
 
 	</head>
+	<style>
+		.step{
+			width:100%;
+			height:100%;
+		}
+		.step1-contain{
+			position: absolute;
+			width:90%;
+			top:40%;
+			left:5%;
+			text-align: center;
+			
+		}
+		.step1-elem{
+			margin:10px;
+		}
+		.fileUpload {
+			position: relative;
+			overflow: hidden;
+			margin: 10px;
+			
+		}
+		.fileUpload input.upload {
+			position: absolute;
+			top: 0;
+			right: 0;
+			margin: 0;
+			padding: 0;
+			font-size: 20px;
+			cursor: pointer;
+			opacity: 0;
+			filter: alpha(opacity=0);
+		}
+	</style>
 	<body ng-controller="chartCtrl" ng-init="initial()">
-		<input type="file" id="data" ng-file-select="onFileSelect($files)">
+	<div class="step" ng-show="steps[0]">
+		<!-- Step One : Fetch Data/ Confirm header -->
+		<div class="step1-contain" ng-style="fileStyle">
+			<div class="step1-elem">
+				<div class="fileUpload btn btn-primary btn-lg">
+					<span>選擇檔案</span>
+					<input type="file" class="upload" id="data" ng-file-select="onFileSelect($files)">
+				</div>	
+				<div class="btn btn-lg btn-danger">使用API</div>
+			</div>
+			
+			<div class="step1-elem row" ng-show="dataHeaders">
+				<span ng-repeat='header in dataHeaders' class="col-md-3" >
+					<div class="input-group ">
+						<input type="text" class="form-control" ng-model="header" >
+						<span class="input-group-btn">
+							<button class="btn btn-default" ng-click="changeHeader(header,$index)">確認</button>	
+						</span>
+				    </div>
+						
+				</span>
+				
+			</div>
+			<div class="step1-elem" ng-show="dataHeaders">
+				<button class="btn btn-primary" ng-click="cvnJSONStart()">開始轉換資料</button>
+			</div>
+		</div>
+		
+		
 		
 		<!-- <table>
 			<tr ng-repeat="data in csvdata">
 				<td>{{data}}</td>
 			</tr>
 		</table> -->
-		<!-- Step One : Fetch Data/ Confirm header -->
-		<button ng-click="deleteHeader()">這資料本來就沒有欄位</button>
-		<button ng-click="headerconsole()"></button>
 		
-		<div ng-repeat='header in dataHeaders'>
-			<input type="text" ng-model="header" >
-			<button ng-click="changeHeader(header,$index)">更改</button>
-			<button ng-click="addColumn(header, $index)">加入</button>
-			
-		</div>
-		<div>
-			<button ng-click="cvnJSONStart()">確認Header，開始轉換資料</button>
-		</div>
+		
+		
 
-		<!-- Step Two : Add a Chart/ Setting -->
-		<button ng-click="addCharts()">新增一張表</button>
+	</div>
 
-		<div ng-repeat = "chart in charts">
-			<div>
-				第{{$index+1}}張表
-				<input type="text" placeholder='名稱' ng-model="chart.title">
-				<select ng-init="chart.type='column'" ng-model="chart.type">
-					<option value="column">直方圖</option>
-					<option value="line">折線圖</option>
-				</select>
+
+	<!-- Step Two : Add a Chart/ Setting -->
+	<div class="step" ng-show="steps[1]">
+		<button class="btn btn-default" ng-click="addCharts()">新增一張表</button>
+
+
+		<div class="charts jumbotron" ng-repeat="chart in charts">
+			<ol class="breadcrumb">
+			  <li>第{{$index+1}}張表</li>
+			  <li class="active">基本資訊</li>
+			</ol>
+
+			<div class="basic-info">
+				
+				<div class="form-inline form-group">
+					<label>基本資訊：</label>
+					<input class="form-control" type="text" placeholder='名稱' ng-model="chart.title">
+				
+					<select class="form-control btn btn-default" ng-init="chart.type='column'" ng-model="chart.type">
+						<option value="column">直方圖</option>
+						<option value="line">折線圖</option>
+					</select>
+				</div>
+				
+				<div class="form-inline form-group">
+					<label>設定 X 軸：</label>
+					<div class='btn-group'>
+						<button class="btn btn-default" ng-repeat="header in chart.headers" ng-click="addxAxis(chart,header)">
+						{{header}}
+						</button>
+					</div>	
+					
+				</div>
+				<div class="form-group">
+					<label>設定 Y 軸：</label>
+					<div class="form-inline">
+						min-value：<input class="form-control" ng-init="newyaxis.min = 0" ng-model="newyaxis.min" type="number">
+						title:<input class="form-control" ng-model="newyaxis.title.text" type="text">
+						
+						<button class="btn btn-default" ng-click="addyAxis(chart, false)">增加y軸</button>
+						<button class="btn btn-danger" ng-if="(chart.yAxis[0].opposite == false) || (chart.yAxis[1].opposite == false)" ng-click="deleteyAxis(chart.yAxis, false)">刪除</button>
+					</div>
+					<div class="form-inline">
+						min-value：<input class="form-control" ng-init="newyaxis_op.min = 0" ng-model="newyaxis_op.min" type="number">
+						title:<input class="form-control" ng-model="newyaxis_op.title.text" type="text">
+						
+						<button class="btn btn-default" ng-click="addyAxis(chart, true)">增加opposite的y軸</button>
+						<button class="btn btn-danger" ng-if="chart.yAxis[0].opposite || chart.yAxis[1].opposite" ng-click="deleteyAxis(chart.yAxis, true)">刪除</button>
+					</div>	
+				</div>
+				
+				
+				
+				
 			</div>
+
+			
+			
 			<div>
 				
 				<ul>
-					目前的header:
+					目前的欄位:
 					<li ng-repeat="header in chart.headers">
 						{{header}}
 						<button ng-click="classifyData(chart,header)">以這個作分類</button>
-						<button ng-click="addxAxis(chart,header)">加入x軸(ONLY ONE)</button>
+						<button ng-click="addxAxis(chart,header)"><span>設定為x軸</span></button>
 					</li>
 				</ul>
 			</div>
@@ -72,20 +174,7 @@
 					{{chart.series}}
 				</div>
 			</div>
-			<div>
-				min：<input ng-init="newyaxis.min = 0" ng-model="newyaxis.min" type="number">
-				title:<input ng-model="newyaxis.title.text" type="text">
-				
-				<button ng-click="addyAxis(chart, false)">增加y軸</button>
-				<button ng-if="chart.yAxis[0]" ng-click="deleteyAxis(chart.yAxis, false)">刪除</button>
-			</div>
-			<div>
-				min：<input ng-init="newyaxis_op.min = 0" ng-model="newyaxis_op.min" type="number">
-				title:<input ng-model="newyaxis_op.title.text" type="text">
-				
-				<button ng-click="addyAxis(chart, true)">增加opposite的y軸</button>
-				<button ng-if="chart.yAxis[1]" ng-click="deleteyAxis(chart.yAxis, true)">刪除</button>
-			</div>
+			
 			<div>
 				<ul>
 					series分類完有{{chart.classify.keys.length}}個類別：
@@ -104,8 +193,13 @@
 
 			<button ng-click="generateChart(chart)">產生圖表</button>
 		</div>
+	</div>
+		
+		
+
+		
 				
-		<div id="container" style="width:100%; height:400px;"></div>
+	<div id="container" style="width:100%; height:400px;"></div>
 
 		<script>
 			
