@@ -8,9 +8,11 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 		$scope.series = []; 
 		$scope.charts = []; 
 		$scope.yAxisChoice =new Object();
+		$scope.typeChoice =new Object();
 		$scope.newyaxis = new Object(); 
 		$scope.newyaxis_op = new Object();
-		$scope.steps = [true, false, false, false]
+		$scope.steps = [true, false, false, false];
+		$scope.showcharts = false;
 	}
 	$scope.onFileSelect = function($files){
 		var reader = new FileReader();
@@ -27,8 +29,23 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 	$scope.addCharts = function(){
 		var newchart = new Object();
 		newchart.headers = $scope.dataHeaders;
+		newchart.step = 1;
 		$scope.charts.push(newchart);
 		console.log($scope.charts)
+		if($scope.charts.length == 1){
+			$scope.showChartInfo = 0;
+		}
+
+		
+		// 新增一個新的container
+		$('#chartsContain').append("<div id='container"+$scope.charts.length+"' style='width:100%; height:400px;'></div>") 
+	}
+
+	$scope.changeChart = function(index){
+		$scope.showChartInfo = index;
+	}
+	$scope.nextChart = function(){
+		$scope.showChartInfo++;
 	}
 
 	$scope.classifyData = function(chart,header){
@@ -96,19 +113,24 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 		
 
 	}
+
+	$scope.deleteSeries = function(index, series){
+		series.splice(index,1);
+	}
  	
  	$scope.consoleY = function(y){
  		console.log(y);
  	}
 
- 	$scope.addSeries = function(chart, data, index, yAxis){
+ 	$scope.addSeries = function(chart, data, index, yAxis, type){
  		console.log(yAxis);
+ 		console.log(type)
 
  		
  		if(!chart.series) chart.series = [];
  		var newseries = new Object();
  		newseries.yAxis= parseInt(yAxis);
- 		newseries.type = 'column';
+ 		newseries.type = type;
  		newseries.name = data;
  		newseries.data = _.pluck(chart.classify.values[index],'count').map(Number);
 
@@ -116,7 +138,7 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 
  	}
 
-  	$scope.generateChart = function(chart){
+  	$scope.generateChart = function(chart, which){
   		
   		
   		for(var i = 0; i < chart.yAxis.length; i++){
@@ -125,7 +147,7 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
   		}
   		console.log(JSON.stringify(chart));
 		
-	    $('#container').highcharts({
+	    $('#container'+which).highcharts({
 	        chart: {
 	            type: chart.type
 	        },
@@ -138,6 +160,17 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 	        
 	    });
 	
+  	}
+  	$scope.toggleContainer = function(){
+  		if(!$scope.showcharts)$scope.showcharts = true;
+  		else $scope.showcharts = false;
+  	}
+  	$scope.generateAllChart = function(){
+  	  		
+  		$scope.showcharts = true;
+  		for(var i =0; i < $scope.charts.length; i++){
+  			$scope.generateChart($scope.charts[i], i+1);
+  		}
   	}
 
 /*設定表 END 格資料*/
@@ -198,6 +231,16 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 		})
 		$scope.steps[index] = true;
 		console.log($scope.steps)
+	}
+
+	$scope.changeStepByChart = function(index, dir){
+		if(dir === "next"){
+			$scope.charts[index].step++;
+		}
+		else if(dir === "last"){
+			$scope.charts[index].step--;
+		}
+		console.log($scope.charts[index].step);
 	}
 
 }])
