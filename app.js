@@ -1,97 +1,197 @@
-angular.module('chartApp', ['angularFileUpload'])
+angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 
 .controller('chartCtrl', ['$scope','$upload',function($scope,$upload){
-	
-	$scope.dataHeaders = [];
-	$scope
+	$scope.initial = function(){
+		$scope.dataHeaders = [];
+		$scope.xAxis = new Object();
+		$scope.yAxis = [];
+		$scope.series = []; 
+		$scope.charts = []; 
+		$scope.yAxisChoice =new Object();
+		$scope.typeChoice =new Object();
+		$scope.newyaxis = new Object(); 
+		$scope.newyaxis_op = new Object();
+		$scope.steps = [true, false, false, false];
+		$scope.showcharts = false;
+	}
 	$scope.onFileSelect = function($files){
 		var reader = new FileReader();
-		reader.onload = function(e){
-			
+		reader.onload = function(e){			
 			$scope.dataHeaders = getHeader(reader.result);
-
 			$scope.rawdata = reader.result;
-
-
-			// $scope.csvdata = csvJSON(reader.result);
-			// if($scope.csvdata[0].date){
-			// 	$scope.csvdata.sort(function(a,b){
-			// 	  return new Date(b.date) - new Date(a.date);
-			// 	});
-			// }
+			$scope.fileStyle = {top:"34%"};
 			$scope.$apply();
 		}
 		reader.readAsText($files[0]);
 	}
 
 /*設定表 START 格資料*/
+	$scope.addCharts = function(){
+		// alertify.success("新增了 1 張表")
+		var newchart = new Object();
+		newchart.headers = $scope.dataHeaders;
+		newchart.step = 1;
+		$scope.charts.push(newchart);
+		console.log($scope.charts)
+		if($scope.charts.length == 1){
+			$scope.showChartInfo = 0;
+		}
 
-	$scope.classfyData = function(index){
+		
+		// 新增一個新的container
+		$('#chartsContain').append("<div id='container"+$scope.charts.length+"' style='width:100%; height:400px;'></div>") 
+	}
+
+	$scope.changeChart = function(index){
+		$scope.showChartInfo = index;
+		alertify.success("切換至第" +(index+1)+ "張表")
+	}
+	$scope.nextChart = function(){
+		$scope.showChartInfo++;
+	}
+
+	$scope.classifyData = function(chart,header){
+		console.log(header);
 		var data = new Object();
-		var temp = _.groupBy($scope.csvdata,$scope.dataHeaders[index]);
+		var temp = _.groupBy($scope.csvdata,header);
 		data.keys = _.keys(temp);
 		data.values = _.values(temp);
 		console.log(data);
-		$scope.classfiedData = data;
+		chart.classify = data;
 	}
-	$scope.xAxis = new Object();
-	$scope.addxAxis = function(header){
-		$scope.xAxis.categories = _.pluck($scope.csvdata, header)
-		console.log($scope.xAxis)
+	
+	$scope.addxAxis = function(chart, header){
+		var newxaxis = new Object();
+		newxaxis.categories = _.pluck($scope.csvdata, header)
+		chart.xAxis = newxaxis;
+		chart.xAxisname = header;
+		alertify.success("X 軸現在為： "+header);
 	}
 
-	$scope.yAxis = [];
-	$scope.addyAxis = function(header){
-		
-		$scope.yAxis.push($scope.newyaxis)
+	
+	$scope.addyAxis = function(chart, opposite){
+		if(!chart.yAxis) chart.yAxis = [];
+		var find = _.find(chart.yAxis, function(axis){return axis.opposite === opposite});
+		if(!find){
+			if(!opposite){
+				var tempyaxis = new Object();
+				tempyaxis = {
+					title: {
+						text: $scope.newyaxis.title.text
+					},
+					min: $scope.newyaxis.min,
+					opposite: opposite
+				}
+				chart.yAxis.push(tempyaxis);
+				alertify.success("Y 軸現在為： "+$scope.newyaxis.title.text);
+			}
+				
+			else{
+				var tempyaxis = new Object();
+				tempyaxis = {
+					title: {
+						text: $scope.newyaxis_op.title.text
+					},
+					min: $scope.newyaxis_op.min,
+					opposite: opposite
+				}
+				chart.yAxis.push(tempyaxis);
+				alertify.success("反向 Y 軸現在為： "+$scope.newyaxis_op.title.text);
+			}
+		}
+		else if(find){
+			if(!opposite)
+				alertify.error("Y 軸已經設定過了")
+			else
+				alertify.error("反向 Y 軸已經設定過了")
+		}
+
+		_.each(chart.yAxis, function(axis, i){
+			axis.num = i;
+		})
 		$scope.newyaxis = new Object();
-		console.log($scope.yAxis);
+		$scope.newyaxis.min = 0;
+		$scope.newyaxis_op = new Object();
+		$scope.newyaxis_op.min = 0;
+		
+		
+		
+	}
+
+	$scope.deleteyAxis = function(yAxis, tf){
+		_.each(yAxis, function(axis, i){
+			if(tf === axis.opposite) yAxis.splice(i, 1);
+		})
+		
 
 	}
-	// {
- //    	min: 0,
- //        title: {
- //            text: '錯誤次數'
- //        }
- //    }
- 	
- 	$scope.series = [];   
- 	$scope.addSeries = function(data, index){
- 		var newseries = new Object();
- 		newseries.yAxis= 0;
- 		newseries.type = 'column';
- 		newseries.name = data;
- 		newseries.data = _.pluck($scope.classfiedData.values[index],'count').map(Number);
 
- 		$scope.series.push(newseries);
- 		console.log($scope.series);
+	$scope.deleteSeries = function(index, series){
+		series.splice(index,1);
+	}
+ 	
+ 	$scope.consoleY = function(y){
+ 		console.log(y);
+ 	}
+
+ 	$scope.addSeries = function(chart, data, index, yAxis, type){
+ 		console.log(yAxis);
+ 		if(yAxis && type){
+	 		if(!chart.series) chart.series = [];
+	 		var newseries = new Object();
+	 		newseries.yAxis= parseInt(yAxis);
+	 		newseries.type = type;
+	 		newseries.name = data;
+	 		newseries.data = _.pluck(chart.classify.values[index],'count').map(Number);
+
+	 		chart.series.push(newseries);
+	 		alertify.success("加入成功")
+ 		}
+ 		else if(!yAxis){
+ 			alertify.error("沒有選擇要使用哪個 Y 軸唷")
+ 		}
+ 		else if(!type){
+ 			alertify.error("沒有選擇要使用哪種型態呈現唷")
+ 		}
+
+ 		
+
 
  	}
- 	// {
-  //   	yAxis: 0,
-  //   	type: 'column',
-  //       name: '影片連結失效/system',
-  //       data: _.pluck(classify[1],'count').map(Number)
-  //   }
-  //   
-  	$scope.generateChart = function(){
-  			console.log($scope.xAxis)
-  			console.log($scope.yAxis)
-  			console.log($scope.series)
+
+  	$scope.generateChart = function(chart, which){
   		
-		    $('#container').highcharts({
-		        chart: {
-		            type: 'column'
-		        },
-		        title: {
-		            text: 'System Error'
-		        },
-		        xAxis: $scope.xAxis,
-		        yAxis: $scope.yAxis,
-		        series: $scope.series
-		        
-		    });
+  		
+  		// for(var i = 0; i < chart.yAxis.length; i++){
+  		// 	delete chart.yAxis[i].num;
+  		// 	console.log(chart.yAxis);
+  		// }
+  		console.log(JSON.stringify(chart));
+		
+	    $('#container'+which).highcharts({
+	        chart: {
+	            type: chart.type
+	        },
+	        title: {
+	            text: chart.title
+	        },
+	        xAxis: chart.xAxis,
+	        yAxis: chart.yAxis,
+	        series: chart.series
+	        
+	    });
 	
+  	}
+  	$scope.toggleContainer = function(){
+  		if(!$scope.showcharts)$scope.showcharts = true;
+  		else $scope.showcharts = false;
+  	}
+  	$scope.generateAllChart = function(){
+  	  		
+  		$scope.showcharts = true;
+  		for(var i =0; i < $scope.charts.length; i++){
+  			$scope.generateChart($scope.charts[i], i+1);
+  		}
   	}
 
 /*設定表 END 格資料*/
@@ -108,6 +208,7 @@ angular.module('chartApp', ['angularFileUpload'])
 
 	$scope.changeHeader = function(header, index){
 		$scope.dataHeaders[index] = header;
+		$scope.$apply()
 	}
 
 
@@ -122,10 +223,11 @@ angular.module('chartApp', ['angularFileUpload'])
 		$scope.csvdata = csvJSON($scope.rawdata);
 		if($scope.csvdata[0].date){
 			$scope.csvdata.sort(function(a,b){
-			  return new Date(b.date) - new Date(a.date);
+			  return -(new Date(b.date) - new Date(a.date));
 			});
 		}
 		console.log($scope.csvdata)
+		$scope.changeStep(1);
 	}
 
 	function csvJSON(csv){
@@ -142,6 +244,24 @@ angular.module('chartApp', ['angularFileUpload'])
 		  result.push(obj);
 	  }
 	  return result  //in json format (have \r)
+	}
+
+	$scope.changeStep = function(index){
+		_.each($scope.steps, function(step, idx){
+			$scope.steps[idx] = false;
+		})
+		$scope.steps[index] = true;
+		console.log($scope.steps)
+	}
+
+	$scope.changeStepByChart = function(index, dir){
+		if(dir === "next"){
+			$scope.charts[index].step++;
+		}
+		else if(dir === "last"){
+			$scope.charts[index].step--;
+		}
+		console.log($scope.charts[index].step);
 	}
 
 }])
