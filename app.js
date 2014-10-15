@@ -27,6 +27,7 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 
 /*設定表 START 格資料*/
 	$scope.addCharts = function(){
+		// alertify.success("新增了 1 張表")
 		var newchart = new Object();
 		newchart.headers = $scope.dataHeaders;
 		newchart.step = 1;
@@ -43,6 +44,7 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 
 	$scope.changeChart = function(index){
 		$scope.showChartInfo = index;
+		alertify.success("切換至第" +(index+1)+ "張表")
 	}
 	$scope.nextChart = function(){
 		$scope.showChartInfo++;
@@ -62,6 +64,8 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 		var newxaxis = new Object();
 		newxaxis.categories = _.pluck($scope.csvdata, header)
 		chart.xAxis = newxaxis;
+		chart.xAxisname = header;
+		alertify.success("X 軸現在為： "+header);
 	}
 
 	
@@ -79,6 +83,7 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 					opposite: opposite
 				}
 				chart.yAxis.push(tempyaxis);
+				alertify.success("Y 軸現在為： "+$scope.newyaxis.title.text);
 			}
 				
 			else{
@@ -91,7 +96,14 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 					opposite: opposite
 				}
 				chart.yAxis.push(tempyaxis);
+				alertify.success("反向 Y 軸現在為： "+$scope.newyaxis_op.title.text);
 			}
+		}
+		else if(find){
+			if(!opposite)
+				alertify.error("Y 軸已經設定過了")
+			else
+				alertify.error("反向 Y 軸已經設定過了")
 		}
 
 		_.each(chart.yAxis, function(axis, i){
@@ -124,27 +136,36 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 
  	$scope.addSeries = function(chart, data, index, yAxis, type){
  		console.log(yAxis);
- 		console.log(type)
+ 		if(yAxis && type){
+	 		if(!chart.series) chart.series = [];
+	 		var newseries = new Object();
+	 		newseries.yAxis= parseInt(yAxis);
+	 		newseries.type = type;
+	 		newseries.name = data;
+	 		newseries.data = _.pluck(chart.classify.values[index],'count').map(Number);
+
+	 		chart.series.push(newseries);
+	 		alertify.success("加入成功")
+ 		}
+ 		else if(!yAxis){
+ 			alertify.error("沒有選擇要使用哪個 Y 軸唷")
+ 		}
+ 		else if(!type){
+ 			alertify.error("沒有選擇要使用哪種型態呈現唷")
+ 		}
 
  		
- 		if(!chart.series) chart.series = [];
- 		var newseries = new Object();
- 		newseries.yAxis= parseInt(yAxis);
- 		newseries.type = type;
- 		newseries.name = data;
- 		newseries.data = _.pluck(chart.classify.values[index],'count').map(Number);
 
- 		chart.series.push(newseries);
 
  	}
 
   	$scope.generateChart = function(chart, which){
   		
   		
-  		for(var i = 0; i < chart.yAxis.length; i++){
-  			delete chart.yAxis[i].num;
-  			console.log(chart.yAxis);
-  		}
+  		// for(var i = 0; i < chart.yAxis.length; i++){
+  		// 	delete chart.yAxis[i].num;
+  		// 	console.log(chart.yAxis);
+  		// }
   		console.log(JSON.stringify(chart));
 		
 	    $('#container'+which).highcharts({

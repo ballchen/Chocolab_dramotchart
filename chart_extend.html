@@ -2,6 +2,8 @@
 	<head>
 	<meta charset="utf-8">
 		<script src="bower_components/ng-file-upload/angular-file-upload-shim.js"></script>
+		<script src="bower_components/alertify/alertify.min.js"></script>
+		
 		<script src="bower_components/angularjs/angular.js"></script>
 		<script src="bower_components/ng-file-upload/angular-file-upload.js"></script>	
 		<script src="bower_components/ngAnimate/js/angular-animate.min.js"></script>
@@ -14,6 +16,9 @@
 		<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">
 		<!-- <link rel="stylesheet" href="bower_components/ngAnimate/css/ng-animation.css"> -->
 		<link rel="stylesheet" href="animate.css">
+		
+		<link rel="stylesheet" href="bower_components/alertify/themes/alertify.core.css">
+		<link rel="stylesheet" href="bower_components/alertify/themes/alertify.default.css">
 
 	</head>
 	<style>
@@ -251,20 +256,28 @@
 			</div>
 			<div class="check-info" ng-if="chart.step===3">
 				<div>
-					目前x軸
-					{{chart.xAxis}}
+					圖表名稱：{{chart.title}}
 				</div>
 				<div>
-					目前y軸
+					圖表基本呈現：{{chart.type}}
+				</div>
+				<div>
+					目前x軸：
+					{{chart.xAxisname}}
+				</div>
+				<div>
+					目前y軸：
 					<ul>
-						<li ng-repeat="yaxis in chart.yAxis">{{yaxis}}</li>
+						<li ng-repeat="yaxis in chart.yAxis">
+							標題：{{yaxis.title.text}} | 最小值：{{yaxis.min}} | 反向：{{yaxis.opposite}}
+						</li>
 					</ul>
 				</div>
 				<div>
-					目前Series
+					圖表將會呈現的資料：
 					<ul>
 						<li ng-repeat="serie in chart.series">
-							{{serie}}
+							分類名稱：{{serie.name}} | 呈現形式：{{serie.type}}
 							<a href="#" ng-click="deleteSeries($index, chart.series)">刪除</a>
 						</li>
 					</ul>
