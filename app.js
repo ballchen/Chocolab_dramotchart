@@ -16,7 +16,7 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 	}
 	$scope.onFileSelect = function($files){
 		var reader = new FileReader();
-		reader.onload = function(e){			
+		reader.onload = function(e){		
 			$scope.dataHeaders = getHeader(reader.result);
 			$scope.rawdata = reader.result;
 			$scope.fileStyle = {top:"34%"};
@@ -57,12 +57,13 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 		data.keys = _.keys(temp);
 		data.values = _.values(temp);
 		console.log(data);
+
 		chart.classify = data;
 	}
 	
 	$scope.addxAxis = function(chart, header){
 		var newxaxis = new Object();
-		newxaxis.categories = _.pluck($scope.csvdata, header)
+		newxaxis.categories = _.uniq(_.pluck($scope.csvdata, header))
 		chart.xAxis = newxaxis;
 		chart.xAxisname = header;
 		alertify.success("X 軸現在為： "+header);
@@ -223,10 +224,18 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 		$scope.csvdata = csvJSON($scope.rawdata);
 		if($scope.csvdata[0].date){
 			$scope.csvdata.sort(function(a,b){
-			  return -(new Date(b.date) - new Date(a.date));
+				return -(new Date(b.date) - new Date(a.date));
 			});
+			var prevdata = new Object;
+			
+			
+			for(var i = 0; i < $scope.csvdata.length; i++){
+				prevdata = $scope.csvdata[i]
+				$scope.csvdata[i].date = moment($scope.csvdata[i].date).format("MM-DD")
+			}
 		}
 		console.log($scope.csvdata)
+
 		$scope.changeStep(1);
 	}
 
@@ -239,7 +248,7 @@ angular.module('chartApp', ['angularFileUpload', 'ngAnimate'])
 		  var obj = new Object();
 		  var currentline=lines[i].split(",");
 		  for(var j=0;j<$scope.dataHeaders.length;j++){
-			  obj[$scope.dataHeaders[j]] = currentline[j];
+		  	obj[$scope.dataHeaders[j]] = currentline[j];
 		  }
 		  result.push(obj);
 	  }
